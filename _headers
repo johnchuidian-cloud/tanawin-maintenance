@@ -1,0 +1,23 @@
+# Security headers for every response (suite Tier 2). Cloudflare consumes this
+# file as config: /_headers itself returns 404 once deployed, and the headers
+# arrive on every real response. A file in the repo proves nothing — verify:
+#   curl -sI "https://tanawin-maintenance.tanawinbnb.workers.dev/?x=$RANDOM" | grep -i policy
+#
+# CSP is ENFORCING from the first deploy: this is a new app with no live users
+# to break, and every source below is verified against what the pages load.
+#   script-src   jsdelivr = supabase-js UMD. No inline scripts anywhere.
+#   style-src    'unsafe-inline' — update-check.js injects a <style> element
+#                and a handful of style attributes are set from JS.
+#   img-src      blob: = the photo picker's local preview before upload;
+#                the Supabase host = signed URLs for stored photos.
+#   connect-src  Supabase REST, Auth, Storage and the manage-staff function.
+#   default-src  'none' so anything overlooked fails loudly in the console.
+#
+# ⚠️ __SUPABASE_HOST__ is replaced with the real project host before the
+# first push (scripts/fill-config.mjs does it from .env.local).
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' blob: https://__SUPABASE_HOST__; connect-src 'self' https://__SUPABASE_HOST__; font-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), payment=()

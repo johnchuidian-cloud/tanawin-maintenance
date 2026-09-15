@@ -1,0 +1,12 @@
+// Cloudflare Workers (static assets) config for the git-connected build.
+// Maintenance follows Menu/Concierge: a plain static site (index.html +
+// print.html, no build step) — an assets-only worker serving the repo root.
+// Not a single-page app: leave not_found_handling at the default so /print
+// resolves to its own file.
+{
+  "name": "tanawin-maintenance",
+  "compatibility_date": "2026-09-15",
+  "assets": {
+    "directory": "./"
+  }
+}

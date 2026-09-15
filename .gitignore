@@ -1,0 +1,11 @@
+# Secrets never enter this repo (a public mirror will exist).
+.env
+.env.*
+!.env.example
+staff-login.txt
+
+# Local scratch and tooling
+tmp/
+node_modules/
+.claude/
+.DS_Store

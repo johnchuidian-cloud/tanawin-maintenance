@@ -5,8 +5,8 @@
 // Both values are filled from .env.local by `node scripts/fill-config.mjs`
 // (never by hand) so the same source of truth feeds this file and _headers.
 
-const SUPABASE_URL = '__SUPABASE_URL__';
-const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__';
+const SUPABASE_URL = 'https://kyxpzjxftfqbwpnvntqi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5eHB6anhmdGZxYndwbnZudHFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MzY0MTksImV4cCI6MjEwNTExMjQxOX0.cbMxPQX4Ab9P_Ac1BpV7QZt8M7CYpAWOx1M71831Lu8';
 
 // Hub launcher, role-aware like Menu: owner/admin → full hub, staff → /staff.
 const HUB_URL = 'https://tanawin-hub.tanawinbnb.workers.dev/';

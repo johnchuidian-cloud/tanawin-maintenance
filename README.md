@@ -46,10 +46,10 @@ supabase-js used to exercise the UI before the real project existed — open
 | Table | What |
 |---|---|
 | `staff` | people and roles; one owner (partial unique index) |
-| `settings` | one row: hide prices from staff, "not started" threshold |
+| `settings` | one row: the "not started" threshold (the price toggle column is unused since 2026-09-16) |
 | `area_groups`, `areas` | managed places; `blocks_booking` on the group |
 | `issues` + `issue_photos`, `issue_notes`, `issue_events` | work orders; status derived from timestamps; events written by triggers |
-| `items`, `item_catalog` | purchase lines per issue/schedule; remembered prices |
+| `items`, `item_catalog` | purchase lines per issue/schedule (name, qty, note — no prices, by decision); catalog = name suggestions |
 | `equipment` | tools and consumables; a service interval owns a `schedules` row |
 | `schedules`, `schedule_completions` | preventive maintenance |
 | `alerts` | in-app only, written by triggers, per-person read state |

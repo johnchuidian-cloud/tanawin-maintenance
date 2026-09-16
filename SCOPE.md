@@ -63,8 +63,11 @@ Decisions the spec left open:
 - **`item_catalog`** is keyed on `lower(trim(name))` and is updated inside the
   `acquire_items` RPC whenever an actual price is saved — the one write that makes the
   list useful in year three.
-- **Estimate vs actual** are separate columns; the client never sums estimates as spend.
-  There is no spend anywhere in the UI (spec §7).
+- **No prices at all (John, 2026-09-16).** The spec allowed optional item prices and a
+  remembered-price catalog; John removed them entirely: "different stores have different
+  costs, all money is in Finance." The price columns still exist in the tables but the app
+  never reads or writes them, the staff price toggle is gone, and the catalog is name
+  suggestions only. A price worth remembering goes in the item's note.
 - **Equipment with a `service_interval_months` owns exactly one schedule row**
   (`schedules.equipment_id` unique), maintained by a trigger. Completing it stamps
   `equipment.last_serviced_at` and clears a `service due` condition.
@@ -115,8 +118,7 @@ Decisions the spec left open:
   break; built from exactly what the page loads: self, jsdelivr, the project URL).
 - Only the anon key ships in `js/config.js`. Service role key, access token and DB
   password live in `.env.local` (gitignored, self-documenting header).
-- Price visibility toggle is **cosmetic by design** (spec §5: staff record prices
-  themselves, so RLS cannot withhold them). Said so here so nobody inherits it as a gate.
+- (Removed 2026-09-16) The price-visibility toggle is gone along with all prices.
 
 ## 7. Build order followed
 

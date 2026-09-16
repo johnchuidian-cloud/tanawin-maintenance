@@ -206,9 +206,7 @@ function pageShop() {
   const areaFilter = S.shopArea;
   const rows = areaFilter ? all.filter((r) => r.area_ids.has(areaFilter)) : all;
   const groups = [['repairs', 'For open repairs'], ['sched', 'For scheduled maintenance'], ['low', 'Low stock']];
-  const prices = showPrices();
-  let out = 0, est = 0, estMissing = 0;
-  for (const r of rows) if (!r.acquired) { out++; if (r.est != null) est += r.est * r.qty; else estMissing++; }
+  const out = rows.filter((r) => !r.acquired).length;
   let o = '<div class="hd"><h2>Shopping list</h2><p>' + out + ' still needed · across all work orders</p></div>';
   const areasInList = activeAreas().filter((a) => all.some((r) => r.area_ids.has(a.id)));
   if (areasInList.length > 1) {
@@ -220,21 +218,17 @@ function pageShop() {
     if (!rs.length) continue;
     o += '<p class="sect">' + label + '</p>';
     for (const r of rs) {
-      const price = r.acquired ? (r.actual != null ? peso(r.actual * r.qty) : '—') : (r.est != null ? peso(r.est * r.qty) : '—');
-      const plabel = r.acquired ? 'paid' : (r.est != null ? 'estimate' : 'no estimate');
       const key = esc(r.key);
       o += '<div class="shrow' + (r.acquired ? ' got' : '') + '">' +
         '<button class="box" data-tick="' + key + '" aria-label="' + (r.acquired ? 'Untick' : 'Mark as bought') + '">' + (r.acquired ? '✓' : '') + '</button>' +
         '<button class="shbody" data-shop="' + key + '"><p>' + esc(r.name) + (r.qty > 1 ? ' ×' + esc(Number(r.qty)) + (r.unit ? ' ' + esc(r.unit) : '') : '') + '</p>' +
         r.sources.slice(0, 3).map((s) => '<small>' + esc(s) + '</small>').join('') + (r.sources.length > 3 ? '<small>+' + (r.sources.length - 3) + ' more</small>' : '') +
         (r.note.length ? '<small class="note">' + esc(r.note[0]) + '</small>' : '') + '</button>' +
-        (prices ? '<button class="shprice" data-shop="' + key + '">' + price + '<small>' + plabel + '</small></button>' : '') +
         '</div>';
     }
   }
   if (!rows.length) o += '<p class="empty">Nothing on the list.</p>';
-  if (prices && out) o += '<div class="total"><span>Still to buy<small>estimates' + (estMissing ? ' · ' + estMissing + ' without one' : '') + '</small></span><span>' + peso(est) + '</span></div>';
-  o += '<p class="note">Ticking an item asks what you <b>actually paid</b>, so the app remembers the price and the shop for next time. <b>Expenses still get logged in Finance</b> — this is a shopping list, not an accounting record.</p>';
+  o += '<p class="note">Ticking an item marks it bought on <b>every work order that needs it</b>. Prices are not kept here — <b>expenses are logged in Finance</b>. If a price is worth remembering, put it in the item’s note.</p>';
   return o + '<button class="cta" data-act="additem">Add an item</button>';
 }
 

@@ -27,7 +27,7 @@ function text(tag, content, cls) {
   let from = 0;
   for (;;) {
     const { data, error } = await db.from('issues')
-      .select('id, area_id, title, category, priority, reported_by_name, reported_at, completed_at, completed_by_name, assigned_to_name, resolution_note, vendor_contact, reopened_count, items(name, qty, unit, actual_unit_price, acquired)')
+      .select('id, area_id, title, category, priority, reported_by_name, reported_at, completed_at, completed_by_name, assigned_to_name, resolution_note, vendor_contact, reopened_count, items(name, qty, unit, acquired)')
       .gte('completed_at', start).lt('completed_at', end)
       .order('completed_at').order('id').range(from, from + 199);
     if (error) { doc.replaceChildren(text('p', 'Could not load: ' + error.message, 'muted')); return; }
@@ -69,8 +69,7 @@ function text(tag, content, cls) {
     const bought = (i.items || []).filter((it) => it.acquired);
     if (bought.length) {
       const ul = document.createElement('ul'); ul.className = 'items';
-      for (const it of bought) ul.appendChild(text('li', it.name + (Number(it.qty) > 1 ? ' ×' + Number(it.qty) : '') + (it.unit ? ' ' + it.unit : '') +
-        (it.actual_unit_price != null ? ' · ' + peso(it.actual_unit_price * (Number(it.qty) || 1)) : '')));
+      for (const it of bought) ul.appendChild(text('li', it.name + (Number(it.qty) > 1 ? ' ×' + Number(it.qty) : '') + (it.unit ? ' ' + it.unit : '')));
       mat.appendChild(ul);
     } else mat.appendChild(text('small', '—'));
     tr.appendChild(mat);
@@ -78,6 +77,6 @@ function text(tag, content, cls) {
   }
   table.appendChild(tbody);
   frag.appendChild(table);
-  frag.appendChild(text('p', 'Material prices are what staff recorded when buying and are for reference only. The accounting record is Tanawin Finance.', 'foot'));
+  frag.appendChild(text('p', 'Materials are listed for the record only. Spending is in Tanawin Finance.', 'foot'));
   doc.replaceChildren(frag);
 })();

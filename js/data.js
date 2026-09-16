@@ -22,7 +22,7 @@ const S = {
   equipment: [],        // not archived
   schedules: [],        // not archived, items embedded
   alerts: [],           // my feed, newest 100
-  catalog: [],          // remembered prices
+  catalog: [],          // remembered item names (suggestions only)
   // ui
   page: 'issues', triage: 0, expOpen: false, search: '',
   eqFilter: 'All', scoreFilter: 'unseen', shopArea: '',
@@ -35,9 +35,10 @@ const ISSUE_COLS = 'id, area_id, equipment_id, title, description, category, pri
   'reported_by_name, reported_by_id, reported_at, acknowledged_by_name, acknowledged_at, ' +
   'assigned_to_name, assigned_to_id, started_at, started_by_name, completed_at, completed_by_name, ' +
   'resolution_note, vendor_contact, reopened_count, last_reopened_at, photo_count, updated_at';
-const ITEM_COLS = 'id, issue_id, schedule_id, name, qty, unit, estimated_unit_price, actual_unit_price, vendor, note, acquired, acquired_at, acquired_by_name, created_by_name';
+// No price columns are ever read: money lives in Finance (decision 2026-09-16).
+const ITEM_COLS = 'id, issue_id, schedule_id, name, qty, unit, note, acquired, acquired_at, acquired_by_name, created_by_name';
 const EQUIP_COLS = 'id, name, category, area_id, condition, qty, unit, low_stock_threshold, service_interval_months, ' +
-  'last_serviced_at, purchase_date, warranty_expires, purchase_price, photo_path, note, archived_at, created_at';
+  'last_serviced_at, purchase_date, warranty_expires, photo_path, note, archived_at, created_at';
 const SCHED_COLS = 'id, area_id, equipment_id, task, interval_months, next_due_at, last_completed_at, note, created_by_name, archived_at';
 const ALERT_COLS = 'id, audience, kind, actor_name, actor_id, text, subtext, issue_id, schedule_id, read_by, created_at';
 
@@ -87,7 +88,7 @@ async function loadAll() {
     db.from('equipment').select(EQUIP_COLS).is('archived_at', null).order('name').limit(1000),
     db.from('schedules').select(SCHED_COLS + ', items(' + ITEM_COLS + ')').is('archived_at', null).order('next_due_at').limit(1000),
     db.from('alerts').select(ALERT_COLS).order('created_at', { ascending: false }).limit(100),
-    db.from('item_catalog').select('id, name, name_key, last_actual_price, last_vendor, times_bought').order('updated_at', { ascending: false }).limit(500),
+    db.from('item_catalog').select('id, name, name_key, times_bought').order('updated_at', { ascending: false }).limit(500),
   ]);
   S.settings = must(settings, 'settings') || S.settings;
   S.staff = must(staff, 'staff') || [];
@@ -119,7 +120,6 @@ const activeAreas = () => S.areas.filter((a) => !a.archived_at);
 const activeStaff = () => S.staff.filter((s) => s.is_active);
 const isManager = () => S.me && (S.me.role === 'owner' || S.me.role === 'admin');
 const isOwner = () => S.me && S.me.role === 'owner';
-const showPrices = () => !(S.settings.hide_prices_from_staff && S.me.role === 'staff');
 
 const findIssue = (id) => S.issues.find((i) => i.id === id) || S.archive.rows.find((i) => i.id === id) || null;
 const findEquip = (id) => S.equipment.find((e) => e.id === id) || null;
@@ -202,9 +202,8 @@ function shoppingRows() {
       area_id: s.area_id, source: s.task + ' · ' + dueLabel(s.next_due_at) });
   }
   for (const e of S.equipment) if (isLow(e)) {
-    const c = catalogFor(e.name);
-    push('e:' + e.id, { id: null, name: e.name, unit: e.unit, qty: 1, acquired: false, est: c ? c.last_actual_price : null,
-      actual: null, note: e.note, vendor: c ? c.last_vendor : null, group: 'low', area_id: e.area_id, equip: e,
+    push('e:' + e.id, { id: null, name: e.name, unit: e.unit, qty: 1, acquired: false, est: null,
+      actual: null, note: e.note, vendor: null, group: 'low', area_id: e.area_id, equip: e,
       source: areaName(e.area_id) + ' — ' + e.qty + (e.unit ? ' ' + e.unit : '') + ' left' });
   }
   return [...groups.values()];
@@ -290,8 +289,7 @@ async function addIssuePhoto(issueId, file, kind, onStatus) {
 async function addItem(fields) {
   return mustRow(await db.from('items').insert({
     issue_id: fields.issue_id || null, schedule_id: fields.schedule_id || null,
-    name: fields.name, qty: fields.qty || 1, unit: fields.unit || null,
-    estimated_unit_price: fields.estimated_unit_price ?? null, note: fields.note || null,
+    name: fields.name, qty: fields.qty || 1, unit: fields.unit || null, note: fields.note || null,
     created_by_name: S.me.name, created_by_id: S.me.id,
   }).select('id'), 'Adding the item');
 }
@@ -301,14 +299,16 @@ async function updateItem(id, patch) {
 async function deleteItem(id) {
   mustRow(await db.from('items').delete().eq('id', id).select('id'), 'Removing the item');
 }
-async function acquireItems(ids, actual, vendor) {
-  must(await db.rpc('acquire_items', { p_ids: ids, p_actual: actual ?? null, p_vendor: vendor || null }), 'Marking as bought');
+// No prices are kept (decision 2026-09-16: all money lives in Finance). The RPC
+// still accepts them; the app never sends any.
+async function acquireItems(ids) {
+  must(await db.rpc('acquire_items', { p_ids: ids, p_actual: null, p_vendor: null }), 'Marking as bought');
 }
 async function unacquireItems(ids) {
   must(await db.rpc('unacquire_items', { p_ids: ids }), 'Unticking');
 }
-async function restockEquipment(id, added, actual, vendor) {
-  must(await db.rpc('restock_equipment', { p_id: id, p_added: added, p_actual: actual ?? null, p_vendor: vendor || null }), 'Restocking');
+async function restockEquipment(id, added) {
+  must(await db.rpc('restock_equipment', { p_id: id, p_added: added, p_actual: null, p_vendor: null }), 'Restocking');
 }
 
 // ---- equipment -------------------------------------------------------------
@@ -326,7 +326,7 @@ async function saveEquipment(id, fields) {
     service_interval_months: fields.service_interval_months ?? null,
     last_serviced_at: fields.last_serviced_at || null,
     purchase_date: fields.purchase_date || null, warranty_expires: fields.warranty_expires || null,
-    purchase_price: fields.purchase_price ?? null, note: fields.note || null,
+    note: fields.note || null,
   };
   if (id) return mustRow(await db.from('equipment').update(row).eq('id', id).select('id'), 'Saving equipment');
   row.condition = fields.condition || 'working';

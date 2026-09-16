@@ -264,14 +264,15 @@ document.addEventListener('click', async (ev) => {
     const key = el.getAttribute('data-tick');
     const r = shoppingRows().find((x) => x.key === key);
     if (!r) return;
+    if (r.equip) return sheetRestock(key);
     if (r.acquired) return act(() => unacquireItems(r.ids), 'Unticked');
-    return sheetPaid(key);
+    return act(() => acquireItems(r.ids), r.ids.length > 1 ? 'Marked as bought on ' + r.ids.length + ' work orders' : 'Marked as bought');
   }
   if ((el = findAttr(ev.target, 'data-tickitem'))) {
     const it = findItem(el.getAttribute('data-tickitem'));
     if (!it) return;
     if (it.acquired) return act(() => unacquireItems([it.id]), 'Unticked');
-    return sheetPaid('item:' + it.id);
+    return act(() => acquireItems([it.id]), 'Marked as bought');
   }
   if ((el = findAttr(ev.target, 'data-shop'))) {
     const r = shoppingRows().find((x) => x.key === el.getAttribute('data-shop'));
@@ -412,46 +413,27 @@ document.addEventListener('click', async (ev) => {
     case 'saveadd': {
       const name = val('a-name');
       if (!name) return toast('Name the item first', true);
-      const c = catalogFor(name);
-      const est = num('a-est');
       const fields = { name, qty: num('a-qty') || 1, unit: val('a-unit') || null, note: val('a-note') || null,
-        estimated_unit_price: est != null ? est : (c ? c.last_actual_price : null),
         issue_id: val('a-sched') ? null : val('a-issue'), schedule_id: val('a-sched') || null };
       if (!fields.issue_id && !fields.schedule_id) return toast('Pick a work order', true);
-      return act(() => addItem(fields), c && est == null ? 'Added — last paid ' + peso(c.last_actual_price) : 'Added',
-        () => fields.issue_id ? sheetIssue(fields.issue_id) : sheetSched(fields.schedule_id));
+      return act(() => addItem(fields), 'Added', () => fields.issue_id ? sheetIssue(fields.issue_id) : sheetSched(fields.schedule_id));
     }
     case 'itemsave': {
       const it = findItem(id); if (!it) return;
       const name = val('f-name') || it.name;
       const patch = { name, qty: num('f-qty') || 1, unit: val('f-unit') || null, note: val('f-note') || null };
-      if ($('f-est')) patch.estimated_unit_price = num('f-est');
-      const actual = $('f-act') ? num('f-act') : null;
-      const vendor = $('f-vendor') ? val('f-vendor') : '';
-      return act(async () => {
-        await updateItem(id, patch);
-        if (actual != null && (!it.acquired || actual !== it.actual_unit_price)) await acquireItems([id], actual, vendor);
-        else if ($('f-vendor') && vendor !== (it.vendor || '')) await updateItem(id, { vendor: vendor || null });
-      }, 'Saved', () => it.issue_id ? sheetIssue(it.issue_id) : sheetSched(it.schedule_id));
+      return act(() => updateItem(id, patch), 'Saved', () => it.issue_id ? sheetIssue(it.issue_id) : sheetSched(it.schedule_id));
     }
     case 'itemdelete': {
       const it = findItem(id); if (!it) return;
       return act(() => deleteItem(id), 'Removed', () => it.issue_id ? sheetIssue(it.issue_id) : sheetSched(it.schedule_id));
     }
-    case 'savepaid': {
-      const key = el.getAttribute('data-key');
-      const r = key.startsWith('item:') ? rowForItem(key.slice(5)) : shoppingRows().find((x) => x.key === key);
-      if (!r) return;
-      const actual = $('p-act') ? num('p-act') : null, vendor = $('p-vendor') ? val('p-vendor') : '';
-      if (r.equip) {
-        const added = num('p-added');
-        if (!added || added <= 0) return toast('How many did you add?', true);
-        return act(() => restockEquipment(r.equip.id, added, actual, vendor), 'Restocked ' + r.name, () => closeSheet());
-      }
-      return act(() => acquireItems(r.ids, actual, vendor), actual != null ? 'Bought at ' + peso(actual) + ' — price remembered' : 'Marked as bought', () => {
-        const it = findItem(r.ids[0]);
-        if (key.startsWith('item:') && it) { it.issue_id ? sheetIssue(it.issue_id) : sheetSched(it.schedule_id); } else closeSheet();
-      });
+    case 'saverestock': {
+      const r = shoppingRows().find((x) => x.key === el.getAttribute('data-key'));
+      if (!r || !r.equip) return;
+      const added = num('p-added');
+      if (!added || added <= 0) return toast('How many did you add?', true);
+      return act(() => restockEquipment(r.equip.id, added), 'Restocked ' + r.name, () => closeSheet());
     }
 
     // ---- equipment ----
@@ -472,7 +454,7 @@ document.addEventListener('click', async (ev) => {
       if (!name) return toast('Name it first', true);
       const fields = { name, category: val('q-cat'), area_id: val('q-area'), qty: num('q-qty') ?? 1, unit: val('q-unit') || null,
         low_stock_threshold: num('q-low'), service_interval_months: num('q-int'), last_serviced_at: val('q-last') || null,
-        purchase_date: val('q-bought') || null, warranty_expires: val('q-warr') || null, purchase_price: $('q-price') ? num('q-price') : null, note: val('q-note') || null };
+        purchase_date: val('q-bought') || null, warranty_expires: val('q-warr') || null, note: val('q-note') || null };
       return act(async () => { const row = await saveEquipment(id, fields); fields.id = row.id; }, id ? 'Saved' : 'Added', () => sheetEquip(fields.id));
     }
     case 'eqarchive': {
@@ -497,11 +479,6 @@ document.addEventListener('click', async (ev) => {
     }
 
     // ---- settings ----
-    case 'toggleprices': {
-      if (!isOwner()) return;
-      const next = !S.settings.hide_prices_from_staff;
-      return act(() => saveSettings({ hide_prices_from_staff: next }), next ? 'Staff can no longer see prices' : 'Staff can see prices again', () => sheetSettings());
-    }
     case 'savestaff': {
       const name = val('ns-name'), pin = val('ns-pin'), role = pressed('ns-role', 'nsrole') || 'staff';
       if (!name) return toast('Name them first', true);

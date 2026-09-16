@@ -123,13 +123,12 @@ function eventLabel(e) {
 }
 
 function itemRowHTML(it) {
-  const q = Number(it.qty) || 1, prices = showPrices();
-  const amt = it.acquired ? (it.actual_unit_price != null ? peso(it.actual_unit_price * q) : '—') : (it.estimated_unit_price != null ? peso(it.estimated_unit_price * q) : '—');
+  const q = Number(it.qty) || 1;
   return '<div class="ck' + (it.acquired ? ' got' : '') + '">' +
     '<button class="box" data-tickitem="' + it.id + '" aria-label="' + (it.acquired ? 'Untick' : 'Mark as bought') + '">' + (it.acquired ? '✓' : '') + '</button>' +
     '<button class="txt" data-item="' + it.id + '"><p>' + esc(it.name) + (q > 1 ? ' ×' + esc(q) : '') + (it.unit ? ' ' + esc(it.unit) : '') + '</p>' +
     (it.note ? '<small class="note">' + esc(it.note) + '</small>' : '<small>tap to add a note</small>') + '</button>' +
-    (prices ? '<button class="amt" data-item="' + it.id + '">' + amt + '<small>' + (it.acquired ? 'paid' : 'estimate') + '</small></button>' : '') + '</div>';
+    (it.acquired ? '<span class="amt"><small>bought' + (it.acquired_by_name ? ' · ' + esc(it.acquired_by_name) : '') + '</small></span>' : '') + '</div>';
 }
 
 function sheetReport(prefill) {
@@ -202,11 +201,10 @@ function sheetAddItem(target) {
   target = target || {};
   let h = sheetHead('Add an item to buy') + '<div class="sbody">';
   h += field('Item', '<input id="a-name" list="cat-list" maxlength="120" placeholder="Start typing…" autocomplete="off">' + catalogDatalist(),
-    'Known items suggest their last paid price automatically.');
+    'Items bought before are suggested as you type.');
   h += '<div class="row2">' + field('Quantity', '<input type="number" id="a-qty" value="1" min="0.01" step="any" inputmode="decimal">') +
     field('Unit', '<input id="a-unit" maxlength="20" placeholder="pcs, kg, m…">') + '</div>';
-  if (showPrices()) h += field('Estimated unit price', '<input type="number" id="a-est" placeholder="optional" min="0" step="any" inputmode="decimal">', 'A guess, for planning. Never counted as spend.');
-  h += field('Note', '<textarea id="a-note" maxlength="500" placeholder="Size, brand, which shop…"></textarea>');
+  h += field('Note', '<textarea id="a-note" maxlength="500" placeholder="Size, brand, which shop, who to ask for…"></textarea>');
   if (!target.schedule_id) {
     h += field('For which work order', '<select id="a-issue">' + openIssues().map((i) =>
       '<option value="' + i.id + '"' + (i.id === target.issue_id ? ' selected' : '') + '>' + esc(areaName(i.area_id)) + ' — ' + esc(i.title) + '</option>').join('') + '</select>');
@@ -221,21 +219,14 @@ function sheetAddItem(target) {
 function sheetItem(itemId) {
   const it = findItem(itemId);
   if (!it) return;
-  const cat = catalogFor(it.name), prices = showPrices();
   const owner = it.issue_id ? findIssue(it.issue_id) : findSched(it.schedule_id);
   const label = it.issue_id ? (owner ? areaName(owner.area_id) + ' — ' + owner.title : '') : (owner ? owner.task : '');
   let h = sheetHead('Edit item') + '<div class="sbody">';
   h += field('Item', '<input id="f-name" list="cat-list" maxlength="120" value="' + esc(it.name) + '" autocomplete="off">' + catalogDatalist());
-  if (cat && prices) h += '<p class="note">Last bought at <b>' + peso(cat.last_actual_price) + '</b>' + (cat.last_vendor ? ' from ' + esc(cat.last_vendor) : '') + '. Prices are remembered so the next person does not have to guess.</p>';
   h += '<div class="row2">' + field('Quantity', '<input type="number" id="f-qty" value="' + esc(Number(it.qty)) + '" min="0.01" step="any" inputmode="decimal">') +
     field('Unit', '<input id="f-unit" maxlength="20" value="' + esc(it.unit || '') + '">') + '</div>';
-  if (prices) {
-    h += field('Estimated unit price', '<input type="number" id="f-est" value="' + (it.estimated_unit_price != null ? esc(it.estimated_unit_price) : '') + '" placeholder="optional" min="0" step="any" inputmode="decimal">', 'A guess, for planning.');
-    h += field('Actual paid, per unit', '<input type="number" id="f-act" value="' + (it.actual_unit_price != null ? esc(it.actual_unit_price) : '') + '" placeholder="fill in when bought" min="0" step="any" inputmode="decimal">', 'Filling this in marks the item as bought.');
-    h += field('Where from', '<input id="f-vendor" maxlength="120" value="' + esc(it.vendor || cat && cat.last_vendor || '') + '" placeholder="Shop or supplier">');
-  }
   h += field('Note', '<textarea id="f-note" maxlength="500" placeholder="Size, brand, which shop, who to ask for…">' + esc(it.note || '') + '</textarea>',
-    'Things like “12mm not 10mm” or “ask for Ronnie” — knowledge that is otherwise only in someone’s head.');
+    'Things like “12mm not 10mm”, “ask for Ronnie” or which shop — knowledge that is otherwise only in someone’s head.');
   if (label) h += '<p class="note">For: ' + esc(label) + '</p>';
   h += '<div class="sheet-actions"><button class="primary" data-act="itemsave" data-id="' + it.id + '">Save</button>' +
     (it.acquired ? '' : '<button data-act="itemdelete" data-id="' + it.id + '">Remove</button>') +
@@ -245,34 +236,17 @@ function sheetItem(itemId) {
 
 // "What did it cost?" — for one shopping-list line (which may be several
 // items with the same name) or a low-stock restock.
-// A single checklist line inside one work order ("item:<id>") ticks only
-// itself; a shopping-list line ticks every source that needs that name.
-function rowForItem(id) {
-  const it = findItem(id);
-  if (!it) return null;
-  const owner = it.issue_id ? findIssue(it.issue_id) : findSched(it.schedule_id);
-  return { key: 'item:' + id, name: it.name, unit: it.unit, qty: Number(it.qty) || 1, ids: [it.id], acquired: it.acquired,
-    est: it.estimated_unit_price, actual: it.actual_unit_price, group: it.issue_id ? 'repairs' : 'sched', note: it.note ? [it.note] : [],
-    vendor: it.vendor, equip: null, area_ids: new Set(), sources: [owner ? (it.issue_id ? owner.title : owner.task) : ''] };
-}
-function sheetPaid(key) {
-  const r = key.startsWith('item:') ? rowForItem(key.slice(5)) : shoppingRows().find((x) => x.key === key);
-  if (!r) return;
-  const cat = catalogFor(r.name), prices = showPrices();
-  const restock = r.group === 'low';
-  let h = sheetHead(restock ? 'Restocked' : 'What did it cost?') + '<div class="sbody">';
-  h += '<div class="pad top"><p class="sheet-title">' + esc(r.name) + (r.qty > 1 && !restock ? ' ×' + esc(Number(r.qty)) : '') + '</p>' +
-    (r.sources.length > 1 ? '<p class="desc">Ticks all ' + r.sources.length + ' work orders that need it.</p>' : '') + '</div>';
-  if (restock) h += field('How many did you add?', '<input type="number" id="p-added" value="' + esc(Math.max(1, Number(r.equip.low_stock_threshold || 1) * 2 - Number(r.equip.qty))) + '" min="0.01" step="any" inputmode="decimal">',
+// Restocking a low consumable is the one tick that needs a number: how many
+// came in. Work-order items just tick (no prices are kept anywhere).
+function sheetRestock(key) {
+  const r = shoppingRows().find((x) => x.key === key);
+  if (!r || !r.equip) return;
+  let h = sheetHead('Restocked') + '<div class="sbody">';
+  h += '<div class="pad top"><p class="sheet-title">' + esc(r.name) + '</p></div>';
+  h += field('How many did you add?', '<input type="number" id="p-added" value="' + esc(Math.max(1, Number(r.equip.low_stock_threshold || 1) * 2 - Number(r.equip.qty))) + '" min="0.01" step="any" inputmode="decimal">',
     'Stock is ' + esc(Number(r.equip.qty)) + (r.unit ? ' ' + esc(r.unit) : '') + ' now.');
-  if (prices) {
-    h += field('Actual paid, per unit', '<input type="number" id="p-act" value="' + (r.est != null ? esc(r.est) : cat ? esc(cat.last_actual_price) : '') + '" min="0" step="any" inputmode="decimal" placeholder="optional">',
-      'Leave blank if you do not know yet; you can add it later.');
-    if (cat) h += '<p class="note">Last paid <b>' + peso(cat.last_actual_price) + '</b>' + (cat.last_vendor ? ' at ' + esc(cat.last_vendor) : '') + '. Saving a different price updates the remembered one.</p>';
-    h += field('Where from', '<input id="p-vendor" maxlength="120" value="' + esc(r.vendor || (cat ? cat.last_vendor : '') || '') + '" placeholder="Shop or supplier">');
-  }
-  h += '<div class="sheet-actions"><button class="primary" data-act="savepaid" data-key="' + esc(key) + '">' + (restock ? 'Save' : 'Mark as bought') + '</button><button data-act="close">Cancel</button></div></div>';
-  openSheet(h, 'paid', key);
+  h += '<div class="sheet-actions"><button class="primary" data-act="saverestock" data-key="' + esc(key) + '">Save</button><button data-act="close">Cancel</button></div></div>';
+  openSheet(h, 'restock', key);
 }
 
 // ---- equipment -------------------------------------------------------------
@@ -296,7 +270,7 @@ async function sheetEquip(id) {
     '<div class="amt">' + esc(Number(e.qty)) + (e.unit ? ' ' + esc(e.unit) : '') + '</div></div>' +
     (e.service_interval_months ? '<div class="ck"><div class="txt"><p>Service every</p><small>' + (s ? 'next ' + esc(dueLabel(s.next_due_at)) : 'feeds Scheduled automatically') + '</small></div><div class="amt">' + e.service_interval_months + ' months</div></div>' : '') +
     (e.last_serviced_at ? '<div class="ck"><div class="txt"><p>Last serviced</p></div><div class="amt">' + esc(fmtDate(e.last_serviced_at)) + '</div></div>' : '') +
-    (e.purchase_date ? '<div class="ck"><div class="txt"><p>Bought</p></div><div class="amt">' + esc(fmtDate(e.purchase_date)) + (e.purchase_price != null && showPrices() ? ' · ' + peso(e.purchase_price) : '') + '</div></div>' : '') +
+    (e.purchase_date ? '<div class="ck"><div class="txt"><p>Bought</p></div><div class="amt">' + esc(fmtDate(e.purchase_date)) + '</div></div>' : '') +
     (e.warranty_expires ? '<div class="ck"><div class="txt"><p>Warranty until</p></div><div class="amt">' + esc(fmtDate(e.warranty_expires)) + '</div></div>' : '') +
     '</div>';
   if (oi) h += '<div class="boxed"><div class="hdr"><h4>OPEN WORK ORDER</h4></div><button class="nt full" data-issue="' + oi.id + '"><p>' + esc(oi.title) + '</p><small>' + esc(rel(oi.reported_at)) + ' · ' + esc(oi.assigned_to_name || 'unassigned') + ' ›</small></button></div>';
@@ -327,8 +301,7 @@ function sheetEquipForm(id) {
     'A number here creates the matching entry in Scheduled and keeps it in step.');
   h += '<div class="row2">' + field('Last serviced', '<input type="date" id="q-last" value="' + esc(v('last_serviced_at')) + '">') +
     field('Bought on', '<input type="date" id="q-bought" value="' + esc(v('purchase_date')) + '">') + '</div>';
-  h += '<div class="row2">' + field('Warranty until', '<input type="date" id="q-warr" value="' + esc(v('warranty_expires')) + '">') +
-    (showPrices() ? field('Purchase price', '<input type="number" id="q-price" value="' + esc(v('purchase_price')) + '" min="0" step="any" inputmode="decimal" placeholder="optional">') : '') + '</div>';
+  h += field('Warranty until', '<input type="date" id="q-warr" value="' + esc(v('warranty_expires')) + '">');
   h += field('Notes', '<textarea id="q-note" maxlength="2000" placeholder="How to use it, quirks, where the spare is…">' + esc(v('note')) + '</textarea>');
   h += '<div class="sheet-actions"><button class="primary" data-act="eqformsave" data-id="' + esc(id || '') + '">Save</button>' +
     (e ? '<button data-act="eqarchive" data-id="' + e.id + '">Archive</button><button data-eq="' + e.id + '">Back</button>' : '<button data-act="close">Cancel</button>') + '</div></div>';
@@ -435,9 +408,6 @@ function sheetSettings() {
       '<span class="sinfo"><p>' + esc(u.name) + '</p><small>Left ' + esc(fmtDate(u.deactivated_at)) + ' · still named on old work orders</small></span><span class="age">›</span></button>';
     h += '</div>';
   }
-  h += '<div class="boxed"><div class="hdr"><h4>WHAT STAFF CAN SEE</h4></div>' +
-    '<div class="srow static"><span class="sinfo"><p>Hide prices from staff</p><small>Shopping list still visible, prices blanked' + (isOwner() ? '' : ' · owner only') + '</small></span>' +
-    '<button class="toggle' + (S.settings.hide_prices_from_staff ? ' on' : '') + '" data-act="toggleprices" aria-pressed="' + !!S.settings.hide_prices_from_staff + '"' + (isOwner() ? '' : ' disabled') + '><i></i></button></div></div>';
   h += '<div class="boxed"><div class="hdr"><h4>TIMING</h4></div>' +
     '<div class="srow static"><span class="sinfo"><p>Flag as “not started” after</p><small>Seen but untouched this long rises to the top' + (isOwner() ? '' : ' · owner only') + '</small></span>' +
     '<span class="stale"><input type="number" id="stale-days" value="' + esc(S.settings.stale_after_days) + '" min="1" max="60" inputmode="numeric"' + (isOwner() ? ' data-change="staledays"' : ' disabled') + '> days</span></div></div>';
@@ -462,7 +432,7 @@ function sheetStaff(id) {
       : isOwner() ? 'Only you can promote or demote. Admins cannot change anyone’s role, including their own.'
       : 'Only the owner can promote or demote. Admins can add and deactivate staff but never change a role.') + '</p></div>';
   const perms = target === 'owner'
-    ? ['Everything staff and admins can do', 'Promote staff to admin, demote an admin', 'Sole role that can change any role', 'Hide prices from staff, set timing']
+    ? ['Everything staff and admins can do', 'Promote staff to admin, demote an admin', 'Sole role that can change any role', 'Set the “not started” timing']
     : target === 'admin'
     ? ['Everything staff can do', 'Add and deactivate staff', 'Manage areas, equipment and schedules', 'Reset a staff PIN']
     : ['Report issues and add photos', 'Update status and take on work', 'Add items to the shopping list', 'Update equipment condition and stock'];

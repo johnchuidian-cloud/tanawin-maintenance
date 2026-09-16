@@ -193,12 +193,12 @@ function shoppingRows() {
   };
   for (const i of openIssues()) for (const it of i.items || []) {
     push('i:' + nameKey(it.name) + ':' + it.acquired, { id: it.id, name: it.name, unit: it.unit, qty: it.qty, acquired: it.acquired,
-      est: it.estimated_unit_price, actual: it.actual_unit_price, note: it.note, vendor: it.vendor, group: 'repairs',
+      est: null, actual: null, note: it.note, vendor: null, group: 'repairs',
       area_id: i.area_id, source: areaName(i.area_id) + ' — ' + i.title });
   }
   for (const s of S.schedules) for (const it of s.items || []) {
     push('s:' + nameKey(it.name) + ':' + it.acquired, { id: it.id, name: it.name, unit: it.unit, qty: it.qty, acquired: it.acquired,
-      est: it.estimated_unit_price, actual: it.actual_unit_price, note: it.note, vendor: it.vendor, group: 'sched',
+      est: null, actual: null, note: it.note, vendor: null, group: 'sched',
       area_id: s.area_id, source: s.task + ' · ' + dueLabel(s.next_due_at) });
   }
   for (const e of S.equipment) if (isLow(e)) {

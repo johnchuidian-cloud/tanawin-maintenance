@@ -234,7 +234,6 @@ function sheetItem(itemId) {
   openSheet(h, 'item', itemId);
 }
 
-// "What did it cost?" — for one shopping-list line (which may be several
 // items with the same name) or a low-stock restock.
 // Restocking a low consumable is the one tick that needs a number: how many
 // came in. Work-order items just tick (no prices are kept anywhere).

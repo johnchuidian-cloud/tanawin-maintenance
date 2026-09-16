@@ -9,3 +9,4 @@ tmp/
 node_modules/
 .claude/
 .DS_Store
+supabase/.temp/

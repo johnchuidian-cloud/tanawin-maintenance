@@ -78,7 +78,7 @@ async function sheetIssue(id) {
   h += '<div class="boxed"><div class="hdr"><h4>ASSIGNED TO</h4><button data-act="assign" data-id="' + i.id + '">Change</button></div>' +
     '<div class="nt"><p>' + esc(i.assigned_to_name || 'Nobody yet') + '</p></div></div>';
 
-  h += '<div class="boxed"><div class="hdr"><h4>MATERIALS TO BUY</h4><button data-act="additem" data-issue="' + i.id + '">Add</button></div>';
+  h += '<div class="boxed"><div class="hdr"><h4>MATERIALS TO BUY</h4><button data-act="additem" data-for-issue="' + i.id + '">Add</button></div>';
   if (!(i.items || []).length) h += '<div class="nt"><small>Nothing needed yet.</small></div>';
   for (const it of i.items || []) h += itemRowHTML(it);
   h += '</div>';
@@ -214,7 +214,7 @@ function sheetAddItem(target) {
     const s = findSched(target.schedule_id);
     h += '<input type="hidden" id="a-sched" value="' + esc(target.schedule_id) + '"><p class="note">For: ' + esc(s ? s.task : 'scheduled task') + '</p>';
   }
-  h += '<div class="sheet-actions"><button class="primary" data-act="saveadd">Add</button><button data-act="' + (target.issue_id ? 'back' : 'close') + '" data-issue="' + esc(target.issue_id || '') + '" data-sched="' + esc(target.schedule_id || '') + '">Cancel</button></div></div>';
+  h += '<div class="sheet-actions"><button class="primary" data-act="saveadd">Add</button><button data-act="' + (target.issue_id || target.schedule_id ? 'back' : 'close') + '" data-for-issue="' + esc(target.issue_id || '') + '" data-for-sched="' + esc(target.schedule_id || '') + '">Cancel</button></div></div>';
   openSheet(h, 'additem');
 }
 
@@ -239,7 +239,7 @@ function sheetItem(itemId) {
   if (label) h += '<p class="note">For: ' + esc(label) + '</p>';
   h += '<div class="sheet-actions"><button class="primary" data-act="itemsave" data-id="' + it.id + '">Save</button>' +
     (it.acquired ? '' : '<button data-act="itemdelete" data-id="' + it.id + '">Remove</button>') +
-    '<button data-act="back" data-issue="' + esc(it.issue_id || '') + '" data-sched="' + esc(it.schedule_id || '') + '">Back</button></div></div>';
+    '<button data-act="back" data-for-issue="' + esc(it.issue_id || '') + '" data-for-sched="' + esc(it.schedule_id || '') + '">Back</button></div></div>';
   openSheet(h, 'item', itemId);
 }
 
@@ -276,9 +276,14 @@ function sheetPaid(key) {
 }
 
 // ---- equipment -------------------------------------------------------------
-function sheetEquip(id) {
+async function sheetEquip(id) {
   const e = findEquip(id);
   if (!e) return;
+  if (e.photo_path && !signedUrl(e.photo_path)) {
+    openSheet(sheetHead(e.name) + '<p class="empty">Loading…</p>', 'equip', id);
+    await signPaths([e.photo_path]);
+    if (SHEET.type !== 'equip' || SHEET.id !== id) return;
+  }
   const cond = equipCondition(e), low = isLow(e), url = e.photo_path ? signedUrl(e.photo_path) : '';
   const s = schedOfEquip(e.id), oi = openIssueOfEquip(e.id);
   let h = sheetHead(e.name) + '<div class="sbody">';
@@ -345,7 +350,7 @@ async function sheetSched(id) {
     (eq ? '<p class="desc">Generated from <button class="linklike" data-eq="' + eq.id + '">🧰 ' + esc(eq.name) + '</button> — change the interval on the equipment itself.</p>' : '') +
     (s.note ? '<p class="desc">' + esc(s.note) + '</p>' : '') +
     (s.last_completed_at ? '<p class="desc">Last done ' + esc(fmtDate(s.last_completed_at)) + '.</p>' : '') + '</div>';
-  h += '<div class="boxed"><div class="hdr"><h4>MATERIALS TO BUY FIRST</h4><button data-act="additem" data-sched="' + s.id + '">Add</button></div>';
+  h += '<div class="boxed"><div class="hdr"><h4>MATERIALS TO BUY FIRST</h4><button data-act="additem" data-for-sched="' + s.id + '">Add</button></div>';
   if (!(s.items || []).length) h += '<div class="nt"><small>Nothing needed.</small></div>';
   for (const it of s.items || []) h += itemRowHTML(it);
   h += '</div>';

@@ -30,12 +30,16 @@ async function triagePhoto() {
   const url = signedUrl(data[0].path);
   if (url && $('triage-photo')) { $('triage-photo').innerHTML = '<img src="' + esc(url) + '" alt="">'; }
 }
+const THUMB_TRIED = new Set();
 async function equipThumbs() {
   const paths = S.equipment.map((e) => e.photo_path).filter(Boolean);
-  const missing = paths.filter((p) => !signedUrl(p));
+  // Only paths not yet attempted: a path that will not sign (deleted object,
+  // offline) must not send render() and equipThumbs() chasing each other.
+  const missing = paths.filter((p) => !signedUrl(p) && !THUMB_TRIED.has(p));
   if (!missing.length) return;
+  missing.forEach((p) => THUMB_TRIED.add(p));
   await signPaths(missing);
-  if (S.page === 'equip') render();
+  if (S.page === 'equip' && missing.some((p) => signedUrl(p))) render();
 }
 
 async function refresh(quiet) {
@@ -56,7 +60,10 @@ function redrawSheet() {
 }
 
 // Every write follows the same shape: do it, reload, redraw, say so.
+let BUSY = false;
 async function act(fn, okMsg, after) {
+  if (BUSY) return;            // a double tap is one tap
+  BUSY = true;
   try {
     await fn();
     await loadAll();
@@ -64,8 +71,17 @@ async function act(fn, okMsg, after) {
     if (after) after(); else redrawSheet();
     if (okMsg) toast(okMsg);
   } catch (e) {
-    toast(e.message || 'Something went wrong', true);
+    toast(friendly(e), true);
+  } finally {
+    BUSY = false;
   }
+}
+function friendly(e) {
+  const m = (e && e.message) || 'Something went wrong';
+  if (/duplicate key/i.test(m)) return 'That name is already in the list.';
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return 'No connection. Nothing was saved — try again when back online.';
+  if (/JWT|expired|not signed in/i.test(m)) return 'Your sign-in expired. Reload the page and sign in again.';
+  return m;
 }
 
 // ---- photo uploads (visible failure, retry keeps the file) ----------------
@@ -277,7 +293,7 @@ document.addEventListener('click', async (ev) => {
   switch (a) {
     case 'close': closeSheet(); return;
     case 'back': {
-      const iss = el.getAttribute('data-issue'), sc = el.getAttribute('data-sched');
+      const iss = el.getAttribute('data-for-issue'), sc = el.getAttribute('data-for-sched');
       if (iss) sheetIssue(iss); else if (sc) sheetSched(sc); else closeSheet();
       return;
     }
@@ -367,23 +383,29 @@ document.addEventListener('click', async (ev) => {
       return;
     }
     case 'postissue': {
-      const title = val('r-title');
+      if (BUSY) return;
+      // a prefilled "Chainsaw — " left untouched should not post as a dangling dash
+      const title = val('r-title').replace(/[\s—–:-]+$/, '').trim();
       if (!title) return toast("Say what's wrong first", true);
       const fields = { area_id: val('r-area'), equipment_id: val('r-eq') || null, title, category: val('r-cat'), priority: pressed('r-prio', 'prio') || 'routine', description: val('r-note') || null };
       const photo = S.pendingPhoto; S.pendingPhoto = null;
+      BUSY = true;
       try {
         const row = await reportIssue(fields);
         await loadAll(); S.triage = 0; S.page = 'issues'; render();
         toast('Posted — nobody has seen it yet');
         await sheetIssue(row.id);
         if (photo) uploadIssuePhoto(row.id, photo, 'before');
-      } catch (e) { S.pendingPhoto = photo; toast(e.message, true); }
+      } catch (e) { S.pendingPhoto = photo; toast(friendly(e), true); }
+      finally { BUSY = false; }
       return;
     }
 
     // ---- items ----
     case 'additem': {
-      const iss = el.getAttribute('data-issue'), sc = el.getAttribute('data-sched');
+      // data-for-* on purpose: a plain data-issue here would be caught by the
+      // "open this work order" branch above and the button would do nothing.
+      const iss = el.getAttribute('data-for-issue'), sc = el.getAttribute('data-for-sched');
       if (!sc && !iss && !openIssues().length) return toast('No open work order to add it to', true);
       sheetAddItem({ issue_id: iss || null, schedule_id: sc || null }); return;
     }

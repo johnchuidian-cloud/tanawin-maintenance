@@ -93,11 +93,16 @@ async function loadAll() {
   S.staff = must(staff, 'staff') || [];
   S.groups = must(groups, 'areas') || [];
   S.areas = must(areas, 'areas') || [];
+  // areas ordered by group first, then their own sort, so "the first area" in
+  // any picker is Ambon Ambon rather than whichever group happens to sort first
+  const gsort = new Map(S.groups.map((g) => [g.id, g.sort]));
+  S.areas.sort((a, b) => ((gsort.get(a.group_id) || 99) - (gsort.get(b.group_id) || 99)) || (a.sort - b.sort) || a.name.localeCompare(b.name));
   S.issues = must(issues, 'work orders') || [];
   S.equipment = must(equipment, 'equipment') || [];
   S.schedules = must(schedules, 'schedules') || [];
   S.alerts = must(alerts, 'alerts') || [];
   S.catalog = must(catalog, 'catalog') || [];
+  S.archive.months = null;   // counts may have moved; the tab reloads them on next view
   S.loadedAt = Date.now();
 }
 

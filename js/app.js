@@ -522,6 +522,11 @@ document.addEventListener('click', async (ev) => {
       return act(() => manageStaff({ action: 'deactivate', id }), 'Deactivated — history kept', () => sheetSettings());
     }
     case 'react': return act(() => manageStaff({ action: 'reactivate', id }), 'Reactivated', () => sheetSettings());
+    case 'delstaff': {
+      const u = S.staff.find((x) => x.id === id); if (!u) return;
+      if (!confirm('Delete ' + u.name + ' for good? Their login stops working and they leave the list. Anything they logged keeps their name.')) return;
+      return act(() => manageStaff({ action: 'delete', id }), u.name + ' removed', () => sheetSettings());
+    }
     case 'areasave': {
       const name = val('ar-name');
       if (!name) return toast('Name the area first', true);

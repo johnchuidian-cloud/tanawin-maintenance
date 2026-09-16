@@ -8,7 +8,7 @@
 // Rules (spec §3, stronger than Menu's):
 //   owner  – everything; the only role that can change a role; cannot be
 //            demoted, deactivated or PIN-reset by anyone else.
-//   admin  – add STAFF (not admins), rename/deactivate/reactivate STAFF,
+//   admin  – add STAFF (not admins), rename/deactivate/reactivate/delete STAFF,
 //            reset a STAFF PIN, change own PIN.
 //   staff  – change own PIN only.
 //
@@ -19,6 +19,7 @@
 //   rename     {id, name}
 //   deactivate {id}                    also bans the login
 //   reactivate {id}                    lifts the ban
+//   delete     {id}                    removes login + row (history keeps the name)
 //
 // Deployed with --no-verify-jwt (Menu's pattern): this code verifies the
 // caller itself, and a missing/invalid token is a 403 either way.
@@ -178,6 +179,25 @@ Deno.serve(async (req) => {
         .eq('id', t.id);
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true, is_active: active });
+    }
+
+    // Permanent removal — for people who should never have been on the list.
+    // History is unaffected: every record carries the name as text, never a
+    // link to this row. Same gates as deactivate.
+    if (action === 'delete') {
+      if (!isManager) return json({ error: 'Only the owner and admins can remove people.' }, 403);
+      const t = await target(body.id);
+      if (!t) return json({ error: 'That person no longer exists.' }, 404);
+      if (t.role === 'owner') return json({ error: 'The owner account cannot be removed.' }, 403);
+      if (t.id === caller.id) return json({ error: 'You cannot remove yourself.' }, 400);
+      if (t.role === 'admin' && !isOwner) return json({ error: 'Only the owner can remove an admin.' }, 403);
+      // login first, then the row: a row without a login is harmless, the
+      // reverse would leave a working login with no permissions and no name
+      const { error: dErr } = await admin.auth.admin.deleteUser(t.auth_uid);
+      if (dErr && !/not found/i.test(dErr.message)) return json({ error: dErr.message }, 400);
+      const { error } = await admin.from('staff').delete().eq('id', t.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
     }
 
     return json({ error: 'Unknown action.' }, 400);

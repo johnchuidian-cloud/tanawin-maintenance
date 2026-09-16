@@ -471,10 +471,16 @@ function sheetStaff(id) {
   h += '<div class="boxed"><div class="hdr"><h4>PIN</h4></div><div class="srow static"><span class="sinfo"><p>4-digit PIN</p><small>Nobody can read it — only set a new one</small></span>' +
     (canResetPin && u.is_active ? '<button class="sbtn" data-act="resetpin" data-id="' + u.id + '">Reset</button>' : '') + '</div></div>';
   const canDeact = !self && target !== 'owner' && (isOwner() || target === 'staff');
+  if (canDeact) {
+    h += '<div class="boxed"><div class="hdr"><h4>REMOVE</h4></div>' +
+      '<div class="srow static"><span class="sinfo"><p>Deactivate</p><small>Keeps them on the list, greyed out. Can be undone.</small></span>' +
+      (u.is_active ? '<button class="sbtn" data-act="deact" data-id="' + u.id + '">Deactivate</button>' : '<button class="sbtn" data-act="react" data-id="' + u.id + '">Reactivate</button>') + '</div>' +
+      '<div class="srow static"><span class="sinfo"><p>Delete</p><small>Takes them off the list for good. Anything they logged keeps their name.</small></span>' +
+      '<button class="sbtn danger" data-act="delstaff" data-id="' + u.id + '">Delete</button></div></div>';
+  }
   h += '<div class="sheet-actions">';
   if (target === 'owner') h += '<button disabled>Cannot remove the owner</button>';
-  else if (u.is_active) h += (canDeact ? '<button data-act="deact" data-id="' + u.id + '">Deactivate</button>' : '') + '<button class="primary" data-act="settings">Done</button>';
-  else h += (canDeact ? '<button class="primary" data-act="react" data-id="' + u.id + '">Reactivate</button>' : '') + '<button data-act="settings">Back</button>';
+  h += '<button class="primary" data-act="settings">' + (target === 'owner' ? 'Done' : 'Back') + '</button>';
   h += '</div></div>';
   openSheet(h, 'staff', id);
 }

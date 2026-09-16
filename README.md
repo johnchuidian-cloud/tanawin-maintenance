@@ -29,7 +29,7 @@ user (`<slug>@tanawin.maintenance`, password `tanawin-maintenance-v1:<pin>`); th
 prefix is public, the secret is the 4 digits. Roles: **owner** (Lexi — the only role
 that can change roles), **admin** (Rio — staff, areas, equipment, schedules),
 **staff** (everyone else). Nobody can read a PIN; owner/admins reset, everyone can
-change their own. Deactivate, never delete.
+change their own. Deactivate keeps a person greyed out on the list; Delete (owner for anyone but herself, admins for staff) removes them for good. History keeps names as text either way.
 
 ## Local dev
 

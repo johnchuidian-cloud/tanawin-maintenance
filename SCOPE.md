@@ -28,7 +28,9 @@ screens do; this file is the reference for *how* it is built.
   `auth.uid()`: `my_role()`, `is_active_staff()`. A deactivated person's token still
   exists but every table returns zero rows and every RPC refuses.
 - Deactivation also bans the GoTrue user, so the login itself stops working, not just
-  the data.
+  the data. **Delete exists too** (added 2026-09-16 at John's request: the seeded list
+  included kitchen-only people). Owner may delete anyone but herself; admins may delete
+  staff. Safe because history rows carry names as text, never a link to `staff`.
 - Role changes: owner only, and never the owner's own role. Admin adding a person can
   only create `staff`. Admin can reset a staff PIN, not an admin's or the owner's.
   Everyone can change their own PIN.

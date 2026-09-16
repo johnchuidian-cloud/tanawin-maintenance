@@ -39,13 +39,11 @@ function cardHTML(i) {
   if (need) m.push('🛒 ' + need + (need === 1 ? ' item' : ' items'));
   if (i.reopened_count) m.push('↩ reopened ' + i.reopened_count + '×');
   m.push(i.assigned_to_name || 'Unassigned');
-  const blocks = groupOfArea(i.area_id).blocks_booking && !i.completed_at;
   return '<button class="card ' + cls + '" data-issue="' + i.id + '">' +
     '<div class="ctop"><div><p class="where">' + esc(areaName(i.area_id)) + ' · ' + esc(i.category) + '</p>' +
     '<p class="what">' + esc(i.title) + '</p></div>' + prioTag(i.priority) + '</div>' +
     railHTML(i) + railLabel(i) +
     '<div class="meta">' + m.map((x) => '<span>' + esc(x) + '</span>').join('') + '</div>' +
-    (blocks ? '<span class="flag">Room should not be booked</span>' : '') +
     '</button>';
 }
 

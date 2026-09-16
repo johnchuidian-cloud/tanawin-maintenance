@@ -54,7 +54,8 @@ Decisions the spec left open:
 - **Stalled** = acknowledged, not started, older than `settings.stale_after_days`
   (default 4). This is the "overdue" threshold in spec §5 Aging. Owner-editable later
   if wanted; it is data, not code.
-- **`blocks_booking` lives on `area_groups`**, seeded true for Guest rooms only.
+- ~~`blocks_booking` on `area_groups`~~ **Removed from the UI 2026-09-16 (John):** "we make repairs
+  even when guests are there." The column stays but is false everywhere and never shown.
 - **Categories** (trade) are a client-side list, stored as text on the issue.
   Electrical, Plumbing, Aircon, Hardware, Furniture, Painting, Grounds, Appliance, Other.
 - **Items** belong to an issue *or* a schedule (check constraint). Low-stock consumables

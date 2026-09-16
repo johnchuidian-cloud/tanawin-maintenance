@@ -47,11 +47,10 @@ async function sheetIssue(id) {
   try { d = await loadIssueDetail(id); } catch (e) { return openSheet(sheetHead(areaName(i.area_id)) + '<p class="empty">' + esc(e.message) + '</p>', 'issue', id); }
   if (SHEET.type !== 'issue' || SHEET.id !== id) return;   // user moved on
   const st = stage(i);
-  const blocks = groupOfArea(i.area_id).blocks_booking && !i.completed_at;
   const eq = i.equipment_id ? findEquip(i.equipment_id) : null;
   let h = sheetHead(areaName(i.area_id)) + '<div class="sbody">';
   h += '<div class="pad top"><p class="sheet-title">' + esc(i.title) + '</p>' +
-    '<div class="c-tags">' + prioTag(i.priority) + tag('neutral', i.category) + (blocks ? tag('urgent', 'Blocks booking') : '') +
+    '<div class="c-tags">' + prioTag(i.priority) + tag('neutral', i.category) +
     (i.reopened_count ? tag('neutral', 'Reopened ' + i.reopened_count + '×') : '') + '</div>' +
     (i.description ? '<p class="desc">' + esc(i.description) + '</p>' : '') +
     (eq ? '<p class="desc"><button class="linklike" data-eq="' + eq.id + '">🧰 ' + esc(eq.name) + '</button></p>' : '') +
@@ -492,7 +491,7 @@ function sheetMe() {
 function sheetAreas() {
   let h = sheetHead('Areas') + '<div class="sbody">';
   for (const g of S.groups) {
-    h += '<div class="boxed' + (g === S.groups[0] ? ' top' : '') + '"><div class="hdr"><h4>' + esc(g.name.toUpperCase()) + (g.blocks_booking ? ' · BLOCKS BOOKING' : '') + '</h4><button data-act="addarea" data-id="' + g.id + '">Add</button></div>';
+    h += '<div class="boxed' + (g === S.groups[0] ? ' top' : '') + '"><div class="hdr"><h4>' + esc(g.name.toUpperCase()) + '</h4><button data-act="addarea" data-id="' + g.id + '">Add</button></div>';
     for (const a of S.areas.filter((x) => x.group_id === g.id)) {
       const n = openIssues().filter((i) => i.area_id === a.id).length;
       h += '<button class="srow' + (a.archived_at ? ' off' : '') + '" data-area="' + a.id + '"><span class="sinfo"><p>' + esc(a.name) + '</p>' +
@@ -508,8 +507,7 @@ function sheetAreaForm(areaId, groupId) {
   const a = areaId ? areaById(areaId) : null;
   let h = sheetHead(a ? 'Edit area' : 'Add an area') + '<div class="sbody">';
   h += field('Name', '<input id="ar-name" maxlength="80" value="' + esc(a ? a.name : '') + '" placeholder="e.g. Annex Room 2">');
-  h += field('Group', '<select id="ar-group">' + S.groups.map((g) => '<option value="' + g.id + '"' + (g.id === (a ? a.group_id : groupId) ? ' selected' : '') + '>' + esc(g.name) + (g.blocks_booking ? ' (blocks booking)' : '') + '</option>').join('') + '</select>',
-    'Whether an open repair means the place should not be booked comes from the group, not the area.');
+  h += field('Group', '<select id="ar-group">' + S.groups.map((g) => '<option value="' + g.id + '"' + (g.id === (a ? a.group_id : groupId) ? ' selected' : '') + '>' + esc(g.name) + '</option>').join('') + '</select>');
   h += '<div class="sheet-actions"><button class="primary" data-act="areasave" data-id="' + esc(areaId || '') + '">Save</button>' +
     (a ? '<button data-act="areaarchive" data-id="' + a.id + '">' + (a.archived_at ? 'Unarchive' : 'Archive') + '</button>' : '') +
     '<button data-act="areas">Back</button></div></div>';

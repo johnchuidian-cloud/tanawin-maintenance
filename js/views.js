@@ -69,13 +69,19 @@ function byAreaRowsHTML() {
     if (!rows.length && !scs.length) continue;
     const u = rows.filter(isUnseen).length;
     out += '<div class="areahd"><h3>' + esc(g.name) + '</h3><span>' + (u ? '<b>' + u + ' unseen</b> · ' : '') + rows.length + ' open</span></div>';
-    for (const i of rows) {
-      const st = stage(i), need = unacquired(i).length;
-      out += '<button class="row' + (isUnseen(i) ? ' n' : '') + '" data-issue="' + i.id + '">' +
-        '<span class="state ' + (st === 2 ? 'prog' : 'rep') + '">' + (isUnseen(i) ? '!' : st) + '</span>' +
-        '<span class="rbody"><p>' + esc(i.title) + '</p><small>' + esc(areaName(i.area_id)) + ' · ' + esc(i.assigned_to_name || 'unassigned') +
-        (need ? ' · 🛒 ' + need : '') + '</small></span>' +
-        '<span class="age' + (isUnseen(i) || isStalled(i) ? ' warn' : '') + '">' + (isUnseen(i) ? 'unseen' : esc(relShort(i.reported_at))) + '</span></button>';
+    // one block per room / place, so a pile of work orders reads as "Ambon Ambon: 3 things"
+    const areasHere = S.areas.filter((a) => a.group_id === g.id && rows.some((i) => i.area_id === a.id));
+    for (const a of areasHere) {
+      const here = rows.filter((i) => i.area_id === a.id).sort((x, y) => new Date(x.reported_at) - new Date(y.reported_at));
+      out += '<div class="subhd"><span>' + esc(a.name) + '</span><small>' + here.length + (here.length === 1 ? ' open' : ' open') + '</small></div>';
+      for (const i of here) {
+        const st = stage(i), need = unacquired(i).length;
+        out += '<button class="row' + (isUnseen(i) ? ' n' : '') + '" data-issue="' + i.id + '">' +
+          '<span class="state ' + (st === 2 ? 'prog' : 'rep') + '">' + (isUnseen(i) ? '!' : st) + '</span>' +
+          '<span class="rbody"><p>' + esc(i.title) + '</p><small>' + esc(i.category) + ' · ' + esc(i.assigned_to_name || 'unassigned') +
+          (need ? ' · 🛒 ' + need : '') + '</small></span>' +
+          '<span class="age' + (isUnseen(i) || isStalled(i) ? ' warn' : '') + '">' + (isUnseen(i) ? 'unseen' : esc(relShort(i.reported_at))) + '</span></button>';
+      }
     }
     for (const s of scs) {
       out += '<button class="row" data-sched="' + s.id + '"><span class="state due">🗓</span>' +
@@ -120,7 +126,10 @@ function triageHTML() {
 function overviewHTML() {
   const f = S.scoreFilter;
   const open = openIssues();
-  let o = '<div class="scores">' +
+  let o = '<div class="viewtabs"><button data-view="urgency" aria-pressed="' + (S.viewMode !== 'place') + '">By urgency</button>' +
+    '<button data-view="place" aria-pressed="' + (S.viewMode === 'place') + '">By room &amp; place</button></div>';
+  if (S.viewMode === 'place') return o + byPlaceHTML();
+  o += '<div class="scores">' +
     '<button class="score u" data-score="unseen" aria-pressed="' + (f === 'unseen') + '"><b>' + unseenIssues().length + '</b><i>Not yet seen</i></button>' +
     '<button class="score d" data-score="attn" aria-pressed="' + (f === 'attn') + '"><b>' + open.filter(needsAttention).length + '</b><i>Needs attention</i></button>' +
     '<button class="score" data-score="all" aria-pressed="' + (f === 'all') + '"><b>' + open.length + '</b><i>All open</i></button>' +
@@ -139,6 +148,28 @@ function overviewHTML() {
     if (!open.length) o += '<p class="empty">Nothing open. Enjoy it.</p>';
     if (fx.length) o += '<p class="sect">Fixed this week</p>' + fx.map(cardHTML).join('');
   }
+  return o + '</div>';
+}
+
+// Owner's second arrangement: every open work order under its room or place,
+// places in property order, oldest work first. Fixed-this-week stays at the end.
+function byPlaceHTML() {
+  const open = openIssues();
+  let o = '<div class="list">';
+  if (!open.length) o += '<p class="empty">Nothing open. Enjoy it.</p>';
+  for (const g of S.groups) {
+    const areasHere = S.areas.filter((a) => a.group_id === g.id && open.some((i) => i.area_id === a.id));
+    if (!areasHere.length) continue;
+    o += '<p class="sect">' + esc(g.name) + '</p>';
+    for (const a of areasHere) {
+      const here = open.filter((i) => i.area_id === a.id).sort((x, y) => new Date(x.reported_at) - new Date(y.reported_at));
+      const u = here.filter(isUnseen).length;
+      o += '<div class="placehd"><span>' + esc(a.name) + '</span><small>' + here.length + ' open' + (u ? ' · <b>' + u + ' unseen</b>' : '') + '</small></div>';
+      o += here.map(cardHTML).join('');
+    }
+  }
+  const fx = fixedRecently();
+  if (fx.length) o += '<p class="sect">Fixed this week</p>' + fx.map(cardHTML).join('');
   return o + '</div>';
 }
 

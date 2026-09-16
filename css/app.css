@@ -138,6 +138,19 @@ select, .field input, .field select, .field textarea {
 .c-actions button.primary { background: var(--maroon); color: var(--cream); border-color: var(--maroon); }
 .c-pager { text-align: center; font-size: 12.5px; color: var(--ink-2); padding: 12px 16px 2px; margin: 0; }
 
+/* ---------- owner view toggle + place headings ---------- */
+.viewtabs { display: flex; gap: 6px; padding: 12px 16px 0; }
+.viewtabs button { flex: 1; font-size: 13px; font-weight: 650; padding: 8px 6px; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink-2); cursor: pointer; }
+.viewtabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+.placehd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 6px 2px 0; }
+.placehd span { font-size: 14px; font-weight: 700; }
+.placehd small { font-size: 11.5px; color: var(--ink-2); }
+.placehd small b { color: var(--maroon); }
+.subhd { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 16px 2px; background: #fff; border-top: 1px solid var(--line); }
+.subhd span { font-size: 13px; font-weight: 700; }
+.subhd small { font-size: 11px; color: var(--ink-2); }
+.subhd + .row { border-top: none; }
+
 /* ---------- owner score row + cards ---------- */
 .scores { display: flex; gap: 8px; padding: 12px 16px 2px; }
 .score { flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; text-align: left; color: inherit; cursor: pointer; font-size: 16px; }
@@ -264,6 +277,9 @@ select, .field input, .field select, .field textarea {
 .row2 .field + .field { margin-left: 0; }
 .photo-add { margin: 13px 16px 0; min-height: 64px; background: #fff; border: 1.5px dashed var(--line); border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--ink-2); font-size: 13.5px; cursor: pointer; width: calc(100% - 32px); padding: 10px; }
 .photo-add .ic { font-size: 20px; }
+.photo-add.want { border-style: solid; border-color: var(--maroon); color: var(--maroon); font-weight: 650; }
+.hint.pad { margin: 8px 16px 0; }
+.hint b { color: var(--ink); }
 .upstat { margin: 6px 16px 0; font-size: 12.5px; color: var(--ink-2); min-height: 0; }
 .upstat .bad { color: var(--maroon); font-weight: 650; }
 .photos { display: flex; gap: 8px; padding: 13px 16px 0; flex-wrap: wrap; }

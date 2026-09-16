@@ -182,6 +182,7 @@ $('loginPin').oninput = async (e) => {
 async function start(me) {
   S.me = me;
   S.page = 'issues';
+  try { S.viewMode = localStorage.getItem('tm-view') || 'urgency'; } catch (e) { /* fine */ }
   $('login').classList.add('hidden');
   $('app').classList.remove('hidden');
   $('page').innerHTML = '<p class="empty"><span class="spin">✸</span><br>Loading…</p>';
@@ -210,6 +211,7 @@ document.addEventListener('click', async (ev) => {
 
   if ((el = findAttr(ev.target, 'data-page'))) { S.page = el.getAttribute('data-page'); render(); window.scrollTo(0, 0); return; }
   if ((el = findAttr(ev.target, 'data-score'))) { S.scoreFilter = el.getAttribute('data-score'); render(); return; }
+  if ((el = findAttr(ev.target, 'data-view'))) { S.viewMode = el.getAttribute('data-view'); try { localStorage.setItem('tm-view', S.viewMode); } catch (e) { /* fine */ } render(); return; }
   if ((el = findAttr(ev.target, 'data-eqf'))) { S.eqFilter = el.getAttribute('data-eqf'); render(); return; }
   if ((el = findAttr(ev.target, 'data-month'))) {
     const ym = el.getAttribute('data-month');
@@ -340,7 +342,7 @@ document.addEventListener('click', async (ev) => {
     }
     case 'savefinish': {
       const note = val('f-note');
-      return act(() => updateIssue(id, { completed_at: new Date().toISOString(), resolution_note: note || null }), 'Marked as fixed', () => sheetIssue(id));
+      return act(() => updateIssue(id, { completed_at: new Date().toISOString(), resolution_note: note || null }), 'Marked as fixed — now add the after photo', () => sheetIssue(id));
     }
     case 'reopen': {
       if (!confirm('Reopen this work order? Its history stays.')) return;

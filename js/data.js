@@ -25,7 +25,7 @@ const S = {
   catalog: [],          // remembered item names (suggestions only)
   // ui
   page: 'issues', triage: 0, expOpen: false, search: '',
-  eqFilter: 'All', scoreFilter: 'unseen', shopArea: '',
+  eqFilter: 'All', scoreFilter: 'unseen', shopArea: '', viewMode: 'urgency',
   archive: { months: null, month: null, rows: [], area: '', cat: '', loading: false },
   signed: new Map(),    // storage path -> {url, until}
   loadedAt: 0,

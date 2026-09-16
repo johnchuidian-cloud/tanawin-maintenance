@@ -57,14 +57,20 @@ async function sheetIssue(id) {
     (i.vendor_contact ? '<p class="desc">Contractor: ' + esc(i.vendor_contact) + '</p>' : '') +
     '<p class="desc"><button class="linklike" data-act="editissue" data-id="' + i.id + '">Edit details</button></p></div>';
 
+  const befores = d.photos.filter((p) => p.kind === 'before').length, afters = d.photos.filter((p) => p.kind === 'after').length;
   h += '<div class="photos">';
   for (const p of d.photos) {
     const u = signedUrl(p.path);
     h += '<button class="thumb" data-photo="' + esc(p.path) + '">' + (u ? '<img src="' + esc(u) + '" alt="">' : '📷') + '<span>' + esc(p.kind) + '</span></button>';
   }
   h += '</div>';
-  h += '<button class="photo-add" data-act="photo" data-id="' + i.id + '" data-kind="' + (i.completed_at ? 'after' : 'before') + '"><span class="ic">📷</span>' +
-    (i.completed_at ? 'Add an after photo' : 'Add a photo') + '</button><div id="upstat" class="upstat"></div>';
+  h += '<button class="photo-add' + (i.completed_at && !afters ? ' want' : '') + '" data-act="photo" data-id="' + i.id + '" data-kind="' + (i.completed_at ? 'after' : 'before') + '"><span class="ic">📷</span>' +
+    (i.completed_at ? 'Add an after photo' : (befores ? 'Add another before photo' : 'Add a before photo')) + '</button><div id="upstat" class="upstat"></div>';
+  // The photo protocol, said where it applies. Two moments, two photos.
+  if (!i.completed_at) h += '<p class="hint pad">' + (befores ? 'These are the <b>before</b> photos. ' : '<b>Before:</b> take a photo of the problem as you found it. ') +
+    'When the job is done, tap <b>Mark as fixed</b>, then add an <b>after</b> photo of the finished repair.</p>';
+  else if (!afters) h += '<p class="hint pad"><b>One more step:</b> add an <b>after</b> photo of the finished repair so the record shows before and after side by side.</p>';
+  else h += '<p class="hint pad">Before and after are both on record.' + (befores ? '' : ' No before photo was taken for this one.') + '</p>';
 
   h += '<div class="timeline">' +
     '<div class="tl done"><span class="tdot"></span><div><p>Reported</p><small>' + esc(i.reported_by_name) + ' · ' + esc(rel(i.reported_at)) + '</small></div></div>' +
@@ -135,7 +141,8 @@ function sheetReport(prefill) {
   S.pendingPhoto = null;
   const areaId = prefill.area_id || (activeAreas()[0] || {}).id;
   let h = sheetHead('Report an issue') + '<div class="sbody">';
-  h += '<button class="photo-add" data-act="pickphoto"><span class="ic">📷</span><span id="pickphoto-label">Take or upload a photo</span></button>';
+  h += '<button class="photo-add" data-act="pickphoto"><span class="ic">📷</span><span id="pickphoto-label">Take a photo of the problem</span></button>';
+  h += '<p class="hint pad"><b>Before</b> photo: how it looks now, before anyone touches it. Whoever fixes it adds the <b>after</b> photo when marking it fixed. More photos can be added later.</p>';
   h += field('Where', areaSelect('r-area', areaId));
   if (prefill.equipment_id) h += '<input type="hidden" id="r-eq" value="' + esc(prefill.equipment_id) + '">';
   h += field('What is wrong', '<input id="r-title" maxlength="200" placeholder="e.g. Broken light over the stairs" value="' + esc(prefill.title || '') + '">');
@@ -174,7 +181,8 @@ function sheetFinish(id) {
   let h = sheetHead('Mark as fixed') + '<div class="sbody">';
   h += '<div class="pad top"><p class="sheet-title">' + esc(i.title) + '</p><p class="desc">' + esc(areaName(i.area_id)) + '</p></div>';
   h += field('What was done', '<textarea id="f-note" maxlength="4000" placeholder="Replaced the cylinder, works fine now…"></textarea>',
-    'Optional, but the next person who hits the same problem will thank you. You can add an after photo once it is marked fixed.');
+    'Optional, but the next person who hits the same problem will thank you.');
+  h += '<p class="note"><b>Then the after photo.</b> Once you tap Mark as fixed, the work order shows an <b>Add an after photo</b> button. Take one of the finished repair so before and after sit together on the record.</p>';
   h += '<div class="sheet-actions"><button class="primary" data-act="savefinish" data-id="' + i.id + '">Mark as fixed</button><button data-issue="' + i.id + '">Back</button></div></div>';
   openSheet(h, 'finish', id);
 }

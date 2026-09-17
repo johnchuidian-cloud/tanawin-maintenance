@@ -55,9 +55,10 @@ a.btn, .btn { display: inline-block; text-decoration: none; }
 /* ---------- top bar ---------- */
 .topbar { background: var(--maroon); color: var(--cream); padding: 13px 16px; position: sticky; top: 0; z-index: 40; }
 .topbar-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.brand { font-size: 17.5px; font-weight: 600; white-space: nowrap; }
+.brand { font-size: 17.5px; font-weight: 600; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .brand span { font-weight: 400; opacity: .85; font-size: 13px; }
-.topbar-right { display: flex; align-items: center; gap: 8px; }
+.topbar-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hubchip { font-size: 12.5px; color: var(--cream); text-decoration: none; border: 1px solid rgba(251,246,239,.55); padding: 4px 9px; border-radius: 999px; white-space: nowrap; flex: 0 0 auto; }
 .who { font-size: 12.5px; background: rgba(255,255,255,.16); padding: 5px 10px; border-radius: 999px; border: none; color: var(--cream); cursor: pointer; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
 .bell, .gear {
   background: rgba(255,255,255,.16); border: none; color: var(--cream); font-size: 14px; width: 30px; height: 30px;
@@ -69,6 +70,9 @@ a.btn, .btn { display: inline-block; text-decoration: none; }
   min-width: 16px; height: 16px; border-radius: 99px; display: none; align-items: center; justify-content: center; padding: 0 3px; border: 1.5px solid var(--maroon);
 }
 .bdot.on { display: flex; }
+/* On a phone the app name drops under the wordmark instead of disappearing,
+   which leaves room for the Hub chip beside the name chip, bell and gear. */
+@media (max-width: 420px) { .brand { line-height: 1.05; flex: 0 0 auto; } .brand span { display: block; font-size: 11px; } .topbar-right { gap: 6px; padding-right: 3px; } .who { max-width: 96px; min-width: 0; flex: 0 1 auto; } }
 
 /* ---------- tags / pills / buttons ---------- */
 .tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; white-space: nowrap; display: inline-block; }

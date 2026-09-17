@@ -6,6 +6,8 @@
 // ---- render ----------------------------------------------------------------
 function render() {
   $('who').textContent = S.me.name + ' · ' + cap(S.me.role);
+  // ⌂ Hub, role-aware like every other Tanawin app: staff land on the staff launcher
+  $('hub').href = S.me.role === 'staff' ? HUB_STAFF_URL : HUB_URL;
   $('gear').classList.toggle('hidden', !isManager());
   const u = unreadCount();
   $('bdot').textContent = u ? String(u) : '';

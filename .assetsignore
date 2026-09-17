@@ -1,0 +1,10 @@
+# Not part of the app: keep these off the live site (they stay in the repo).
+docs/
+db/
+scripts/
+supabase/
+tmp/
+*.md
+wrangler.jsonc
+.gitignore
+.assetsignore

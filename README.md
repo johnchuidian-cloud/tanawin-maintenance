@@ -11,6 +11,16 @@ Seventh app in the Tanawin family: Finance, Kitchen, Hub, Menu, Payroll, Concier
 `SCOPE.md` records every build decision. Live at
 https://tanawin-maintenance.tanawinbnb.workers.dev/ (staff login required).
 
+## Screenshots
+
+Everything below is **made-up data** on an in-memory stand-in for the database (fictional staff, sample photo placeholders). No real work orders, people or photos.
+
+<table>
+<tr><td align="center" width="25%"><img src="docs/screenshots/01-login.png" width="200" alt="Pick your name, enter a PIN"><br><sub>Pick your name, enter a PIN</sub></td><td align="center" width="25%"><img src="docs/screenshots/02-owner-overview.png" width="200" alt="Owner overview, by urgency"><br><sub>Owner overview, by urgency</sub></td><td align="center" width="25%"><img src="docs/screenshots/03-by-room-and-place.png" width="200" alt="Same queue, by room and place"><br><sub>Same queue, by room and place</sub></td><td align="center" width="25%"><img src="docs/screenshots/04-work-order.png" width="200" alt="A work order: before photos, timeline, materials"><br><sub>A work order: before photos, timeline, materials</sub></td></tr>
+<tr><td align="center" width="25%"><img src="docs/screenshots/05-staff-home.png" width="200" alt="Staff home: one card at a time"><br><sub>Staff home: one card at a time</sub></td><td align="center" width="25%"><img src="docs/screenshots/06-report-an-issue.png" width="200" alt="Report an issue, with a duplicate warning"><br><sub>Report an issue, with a duplicate warning</sub></td><td align="center" width="25%"><img src="docs/screenshots/07-equipment.png" width="200" alt="Equipment and stock levels"><br><sub>Equipment and stock levels</sub></td><td align="center" width="25%"><img src="docs/screenshots/08-equipment-item.png" width="200" alt="One tool: service interval, warranty, notes"><br><sub>One tool: service interval, warranty, notes</sub></td></tr>
+<tr><td align="center" width="25%"><img src="docs/screenshots/09-scheduled.png" width="200" alt="Preventive maintenance"><br><sub>Preventive maintenance</sub></td><td align="center" width="25%"><img src="docs/screenshots/10-shopping.png" width="200" alt="One shopping list across every job"><br><sub>One shopping list across every job</sub></td><td align="center" width="25%"><img src="docs/screenshots/11-alerts.png" width="200" alt="In-app alerts"><br><sub>In-app alerts</sub></td><td align="center" width="25%"><img src="docs/screenshots/12-settings.png" width="200" alt="Staff, roles and areas"><br><sub>Staff, roles and areas</sub></td></tr>
+</table>
+
 ## Stack
 
 - Vanilla HTML/CSS/JS, **no build step**. supabase-js from jsdelivr. One page

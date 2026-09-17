@@ -72,7 +72,9 @@ a.btn, .btn { display: inline-block; text-decoration: none; }
 .bdot.on { display: flex; }
 /* On a phone the app name drops under the wordmark instead of disappearing,
    which leaves room for the Hub chip beside the name chip, bell and gear. */
-@media (max-width: 420px) { .brand { line-height: 1.05; flex: 0 0 auto; } .brand span { display: block; font-size: 11px; } .topbar-right { gap: 6px; padding-right: 3px; } .who { max-width: 96px; min-width: 0; flex: 0 1 auto; } }
+/* The page never grows past 430px (.wrap), so the top bar is always phone-width:
+   the app name sits under "Tanawin" at every screen size, not only on narrow phones. */
+.brand { line-height: 1.05; flex: 0 0 auto; } .brand span { display: block; font-size: 11px; } .topbar-right { gap: 6px; padding-right: 3px; } .who { max-width: 110px; min-width: 0; flex: 0 1 auto; }
 
 /* ---------- tags / pills / buttons ---------- */
 .tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; white-space: nowrap; display: inline-block; }
@@ -354,6 +356,7 @@ select, .field input, .field select, .field textarea {
 .sinfo { flex: 1; min-width: 0; }
 .sinfo p { margin: 0; font-size: 14.5px; font-weight: 600; }
 .sinfo small { font-size: 12px; color: var(--ink-2); display: block; }
+.sinfo p small { display: inline; font-weight: 400; }
 .toggle { flex: 0 0 auto; width: 44px; height: 25px; border-radius: 99px; background: var(--line); border: none; position: relative; cursor: pointer; padding: 0; }
 .toggle.on { background: var(--green); }
 .toggle[disabled] { cursor: default; opacity: .7; }

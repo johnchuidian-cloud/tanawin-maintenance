@@ -8,8 +8,8 @@ survives staff turnover. **Not guest-facing. No cost reporting — Finance owns 
 Seventh app in the Tanawin family: Finance, Kitchen, Hub, Menu, Payroll, Concierge,
 **Maintenance** (this one).
 
-`SCOPE.md` records every build decision. `WHAT-JOHN-DOES-NEXT.md` is the one-page
-checklist for getting it live.
+`SCOPE.md` records every build decision. Live at
+https://tanawin-maintenance.tanawinbnb.workers.dev/ (staff login required).
 
 ## Stack
 
@@ -47,7 +47,7 @@ supabase-js used to exercise the UI before the real project existed — open
 |---|---|
 | `staff` | people and roles; one owner (partial unique index) |
 | `settings` | one row: the "not started" threshold (the price toggle column is unused since 2026-09-16) |
-| `area_groups`, `areas` | managed places; `blocks_booking` on the group |
+| `area_groups`, `areas` | managed places (5 groups, 35 areas to start) |
 | `issues` + `issue_photos`, `issue_notes`, `issue_events` | work orders; status derived from timestamps; events written by triggers |
 | `items`, `item_catalog` | purchase lines per issue/schedule (name, qty, note — no prices, by decision); catalog = name suggestions |
 | `equipment` | tools and consumables; a service interval owns a `schedules` row |
@@ -62,7 +62,7 @@ Storage bucket `photos` is private (3 MB, jpeg/webp/png); the client compresses 
 - `scripts/fill-config.mjs` — copies the public URL + anon key from `.env.local` into
   `js/config.js` and the CSP in `_headers`.
 - `scripts/apply-sql.mjs <file>` — runs a migration through the management API.
-- `scripts/seed-staff.mjs` — first six logins with random PINs → `staff-login.txt`
+- `scripts/seed-staff.mjs` — first logins with random PINs → `staff-login.txt`
   (gitignored).
 
 Secrets live only in `.env.local` (see `SECRETS.md`).

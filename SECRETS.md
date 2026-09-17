@@ -10,7 +10,7 @@ any line" header and a plain-English note above every key.
 | `SUPABASE_PROJECT_REF` | `scripts/apply-sql.mjs`, Edge Function deploys | the id inside the URL | copy it again, harmless |
 | `SUPABASE_ANON_KEY` | the app; public in `js/config.js` | same page → anon | copy it again, harmless |
 | `SUPABASE_SERVICE_ROLE_KEY` | `scripts/seed-staff.mjs`, **the weekly backup script** | same page → service_role → Reveal | copy it again. ⚠️ While missing, backups skip this database **without failing** |
-| `SUPABASE_ACCESS_TOKEN` | `scripts/apply-sql.mjs`, `supabase functions deploy` | John's or Lexi's Supabase account → Account → Access Tokens | **cannot be read back** — generate a new one |
+| `SUPABASE_ACCESS_TOKEN` | `scripts/apply-sql.mjs`, `supabase functions deploy` | **Lexi's** Supabase account (org Tanawin BnB) → Account → Access Tokens. John has no Supabase account | **cannot be read back** — generate a new one |
 | `MAINTENANCE_DB_PASSWORD` | nothing in the app | chosen at project creation | reset in the Supabase dashboard; nothing else breaks |
 
 The Edge Function needs no secrets set by hand: Supabase injects `SUPABASE_URL`,
@@ -20,7 +20,7 @@ The Edge Function needs no secrets set by hand: Supabase injects `SUPABASE_URL`,
 
 - `scripts/backup-db.mjs` **in the Finance repo** — reads `SUPABASE_URL` and
   `SUPABASE_SERVICE_ROLE_KEY` *from this repo's `.env.local`* once the project is
-  added to it (see WHAT-JOHN-DOES-NEXT). Easy to forget: the script lives elsewhere.
+  added to it (done 2026-09-16). Easy to forget: the script lives elsewhere.
 - `scripts/refresh-usb-folder.mjs` in the Finance repo copies this file into
   `Documents\Tanawin-USB-Backup\1-SECRETS\`.
 

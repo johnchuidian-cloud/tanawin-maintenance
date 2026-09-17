@@ -1,4 +1,9 @@
 # Not part of the app: keep these off the live site (they stay in the repo).
+# .git/ matters most: Cloudflare builds from a checkout, and without this line the
+# live site serves /.git/config and friends.
+.git/
+.github/
+.claude/
 docs/
 db/
 scripts/
